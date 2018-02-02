@@ -1,0 +1,14 @@
+{
+  "type": "ecmascript",
+  "id": "dailymotion",
+  "file": "dailymotion.js",
+  "category": "tv",
+  "showtimeVersion": "0.0.1",
+  "version": "1.0.0",
+  "author": "LengJing",
+  "title": "Dailymotion",
+  "icon": "dailymotion.bmp",
+  "synopsis": "dailymotion video",
+  "description":"<p>dailymotion for gx plugin</p>",
+  "homepage":"https://github.com/luckxiang/plugin.dailymotion.git"
+}
