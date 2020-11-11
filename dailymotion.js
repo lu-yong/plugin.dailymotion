@@ -63,7 +63,7 @@ var channel_list = ['music', 'videogames', 'sport', 'news', 'shortfilms', 'tv', 
                          + ((min < 10)?(":0"+ min):(":"+ min))
                          + ((sec < 10)?(":0"+ sec):(":"+ sec));
 
-        var url = "http://www.dailymotion.com/embed/video/" + info.video_id;
+        var url = "https://www.dailymotion.com/embed/video/" + info.video_id;
         //print("\n-----url: "+ url +"-----\n");
         var response_text = http.request(url, {
             headers: {
@@ -73,27 +73,62 @@ var channel_list = ['music', 'videogames', 'sport', 'news', 'shortfilms', 'tv', 
                 "Cookie": "family_filter=off; ff=off"
             },
         }).toString();
-        var strArray = response_text.match(/\{"type":"video\\\/mp4"[^\}]+\}/g);
 
-        for(var i in strArray){
-            var play_url = JSON.parse(strArray[i]).url;
-            var play_res = strArray[i].match(/\d+x\d+/i)[0];
+        var re = /__PLAYER_CONFIG__ =([\s\S]*?);\<\/script\>/g;
+        var match = re.exec(response_text);
+        var metadata_info = JSON.parse(match[1].toString()).metadata;
 
-            //print("play_res: " + play_res + "\t\tplay_url: " +play_url);
+        url = metadata_info.qualities.auto[0].url;
+        //print("\n-----url: "+ url +"-----\n");
+        response_text = http.request(url, {
+            headers: {
+                "Host": "www.dailymotion.com",
+                "Accept": "*/*",
+                "Connection": "keep-alive",
+                "Cookie": "family_filter=off; ff=off"
+            },
+        }).toString();
 
-            var description_str = "Title: " + info.title
-                                + "\nOwner: " + info.owner
-                                + "\nResolution: " + play_res
-                                + "\nDuration: " + duration_str
-                                + "\nViewers: " + info.viewers;
+        var temp_urllist = response_text.match(/\nhttps[\s\S]*?(?=#cell)/g);
+        var temp_reslist = response_text.match(/NAME="[\s\S]*?(?=",)/g);
+        var description_str = "Title: " + info.title
+            + "\nOwner: " + info.owner
+            + "\nDuration: " + duration_str
+            + "\nViewers: " + info.viewers;
 
+        var urllist = new Array();
+        var reslist = new Array();
+        urllist[0] = temp_urllist[0];
+        reslist[0] = temp_reslist[0];
+
+        for(i = 0; i < temp_reslist.length; i++)
+        {
+            var same_find = 0;
+
+            for(j = 0; j < reslist.length; j++)
+            {
+                if(temp_reslist[i] == reslist[j])
+                {
+                    same_find = 1;
+                    break;
+                }
+            }
+
+            if(0 == same_find)
+            {
+                urllist.push(temp_urllist[i]);
+                reslist.push(temp_reslist[i]);
+            }
+        }
+
+        for(var i in urllist)
+        {
             var metadata = {
-                title: play_res,
+                title: reslist[i].replace("NAME=\"", ""),
                 icon: info.icon_url,
                 description: description_str  // description: xxxx 左侧的视频说明
             };
-
-            page.appendItem(PLUGIN_PREFIX + "play_url:" + play_url, "video", metadata); // 下一层为播放链接
+            page.appendItem(PLUGIN_PREFIX + "play_url:" + urllist[i].replace("\n", ""), "video", metadata);
         }
     });
 
